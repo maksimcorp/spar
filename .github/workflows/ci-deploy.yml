@@ -1,0 +1,46 @@
+name: ci-deploy
+
+# Canonical MAKSIMCORP gate: verify + audit must both pass before deploy-staging.
+# SPAR is a single-file Python CLI (no build, no test suite yet), so verify is a
+# syntax/compile smoke. ruff and a pytest suite are tracked follow-ups: spar.py has
+# pre-existing lint debt, so a blocking `ruff check` would fail the gate today.
+
+on:
+  push:
+    branches: [main, staging]
+  pull_request:
+    branches: [main, staging]
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Compile (syntax smoke)
+        run: python -m py_compile spar.py
+      # TODO(MAK-110 follow-up): clear ruff lint debt, then add a blocking
+      # `ruff check spar.py`; add `pytest` once SPAR has a test suite.
+
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Secret scan (gitleaks, pinned)
+        run: |
+          curl -sSfL -o gitleaks.tar.gz \
+            https://github.com/gitleaks/gitleaks/releases/download/v8.30.0/gitleaks_8.30.0_linux_x64.tar.gz
+          tar -xzf gitleaks.tar.gz gitleaks
+          ./gitleaks detect --no-git --redact --exit-code 1
+
+  deploy-staging:
+    needs: [verify, audit]            # the gate: deploy cannot run unless both pass
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/staging'
+    runs-on: ubuntu-latest
+    steps:
+      # SPAR is a local CLI tool — there is no hosted staging target. This is the
+      # gate skeleton; wire a real publish step here if SPAR ever ships hosted.
+      - name: Deploy to staging (no-op)
+        run: echo "SPAR is a local CLI tool; no hosted staging deploy."
