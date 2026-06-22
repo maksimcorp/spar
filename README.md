@@ -126,7 +126,7 @@ python spar_guard.py "your idea here" --rounds 20
 python spar_guard.py --replay sparring_sessions/<file>.txt
 ```
 
-Configure via env (defaults shown): `SPAR_KILLSWITCH=1` (set `0`/`off` to disable), `SPAR_KILL_THRESHOLD=3` (consecutive `NOT MET` checkpoints to trip), `SPAR_KILL_GATES=""` (comma list to restrict to specific gates; empty = any). `telegram_bot.py` runs the same guard and posts the kill to Telegram (`TELEGRAM_BOT_TOKEN`/`TELEGRAM_CHAT_ID`). This layer is add-only — it runs `spar.py` as a subprocess and never edits it or `prompts/`.
+Configure via env (defaults shown): `SPAR_KILLSWITCH=1` (set `0`/`off` to disable), `SPAR_KILL_THRESHOLD=3` (consecutive `NOT MET` checkpoints to trip), `SPAR_KILL_GATES` defaults to `CUSTOMER VALIDATION` only (the one gate that is structurally unobtainable inside a session, so a healthy STRONG idea that legitimately leaves moat/18-month/hiring gates `NOT MET` is not killed). Pass a comma list to watch specific gates, or `*` (or `all`) to kill on any repeated gate. `telegram_bot.py` runs the same guard and posts the kill to Telegram (`TELEGRAM_BOT_TOKEN`/`TELEGRAM_CHAT_ID`). This layer is add-only — it runs `spar.py` as a subprocess and never edits it or `prompts/`.
 
 ## Edit the agents
 

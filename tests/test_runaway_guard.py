@@ -42,6 +42,23 @@ def _clean(n, ordinal="FIRST"):
     return CLEAN_CHECKPOINT.format(n=n, ord=ordinal)
 
 
+# A healthy STRONG session: CUSTOMER VALIDATION is MET, but other BRILLIANT gates
+# legitimately stay NOT MET at every checkpoint. The default scope must not kill this.
+HEALTHY_CHECKPOINT = """JUDGE (Round {n}):
+VERDICT: STRONG
+
+GATE CHECK (for FUCKING BRILLIANT — for reference):
+- [x] CUSTOMER VALIDATION: **MET** — a real installer voice was found.
+- [ ] Competitive moat stress-tested: **NOT MET** — still being built.
+- [ ] First 18 months modeled: **NOT MET** — partial model only.
+- [ ] Domain expert hiring plan concrete: **NOT MET** — still TBD.
+"""
+
+
+def _healthy(n):
+    return HEALTHY_CHECKPOINT.format(n=n)
+
+
 class ExtractionTests(unittest.TestCase):
     def test_extracts_not_met_only(self):
         gates = extract_not_met_gates(_clean(6))
@@ -109,12 +126,37 @@ class StreakTests(unittest.TestCase):
         self.assertIsNone(ev)
 
 
+class DefaultScopeTests(unittest.TestCase):
+    """The behaviour fix: default scope kills only on CUSTOMER VALIDATION."""
+
+    def test_default_scope_spares_healthy_strong_session(self):
+        cv_only = frozenset({"CUSTOMER VALIDATION"})
+        mon = JudgeMonitor(threshold=3, gates_filter=cv_only)
+        event = None
+        for n in (6, 8, 10, 12):
+            event = mon.feed_checkpoint(_healthy(n), n) or event
+        self.assertIsNone(event, "default scope must not kill when CUSTOMER VALIDATION is MET")
+
+    def test_any_gate_would_kill_the_same_session(self):
+        mon = JudgeMonitor(threshold=3, gates_filter=None)  # opt-in any-gate
+        event = None
+        for n in (6, 8, 10):
+            event = mon.feed_checkpoint(_healthy(n), n) or event
+        self.assertIsNotNone(event)
+        self.assertEqual(event.gate, "COMPETITIVE MOAT STRESS-TESTED")
+
+
 class ConfigTests(unittest.TestCase):
     def test_default_on(self):
         cfg = GuardConfig.from_env({})
         self.assertTrue(cfg.enabled)
         self.assertEqual(cfg.threshold, 3)
-        self.assertIsNone(cfg.gates_filter)
+        # Default is scoped to CUSTOMER VALIDATION only, not any-gate.
+        self.assertEqual(cfg.gates_filter, frozenset({"CUSTOMER VALIDATION"}))
+
+    def test_any_gate_opt_in(self):
+        for sentinel in ("*", "all", "any", "ANY"):
+            self.assertIsNone(GuardConfig.from_env({"SPAR_KILL_GATES": sentinel}).gates_filter)
 
     def test_disable(self):
         for v in ("0", "off", "false", "no"):

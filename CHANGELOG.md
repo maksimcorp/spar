@@ -13,7 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   New files only — `runaway_guard.py` (detector + subprocess runner), `spar_guard.py`
   (guarded CLI front end, with `--replay` for offline verification), `telegram_bot.py`
   (minimal Telegram runner), and `tests/test_runaway_guard.py`. Configurable via env
-  (`SPAR_KILLSWITCH`, `SPAR_KILL_THRESHOLD`, `SPAR_KILL_GATES`); default on. No changes
+  (`SPAR_KILLSWITCH`, `SPAR_KILL_THRESHOLD`, `SPAR_KILL_GATES`); default on, scoped to the
+  `CUSTOMER VALIDATION` gate only (any-gate available via `SPAR_KILL_GATES=*`). No changes
   to `spar.py` or `prompts/`.
 - MAKSIMCORP development-protocol conformance baseline (MAK-110): `main`+`staging`
   branch model (renamed from `master`), canonical `ci-deploy.yml` gate

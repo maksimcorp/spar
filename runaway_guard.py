@@ -39,10 +39,18 @@ OUTPUT_DIR = HERE / "sparring_sessions"
 # ─── Env config ───────────────────────────────────────────────────────────────
 ENV_ENABLED = "SPAR_KILLSWITCH"        # "0"/"off"/"false"/"no" disables; default on
 ENV_THRESHOLD = "SPAR_KILL_THRESHOLD"  # int >= 1; default 3
-ENV_GATES = "SPAR_KILL_GATES"          # comma list of gate labels; empty = any gate
+ENV_GATES = "SPAR_KILL_GATES"          # empty=default gate; comma list=those gates; */all/any=any gate
 
 DEFAULT_THRESHOLD = 3
+# Only CUSTOMER VALIDATION is structurally unobtainable inside a session (the Drago
+# lesson): a real human voice cannot be produced from a desk. The other BRILLIANT
+# gates (competitive moat, 18-month model, hiring plan) are legitimately NOT MET for
+# many checkpoints in a healthy STRONG idea, so killing on any-gate would guillotine a
+# good session. The default kills on CUSTOMER VALIDATION only; opt into any-gate (or a
+# different set) via SPAR_KILL_GATES.
+DEFAULT_GATES = frozenset({"CUSTOMER VALIDATION"})
 _FALSEY = {"0", "off", "false", "no", "n", ""}
+_ANY_GATE_SENTINELS = {"*", "all", "any"}
 
 
 @dataclass
@@ -51,7 +59,8 @@ class GuardConfig:
 
     enabled: bool = True
     threshold: int = DEFAULT_THRESHOLD
-    gates_filter: frozenset[str] | None = None  # normalised labels, or None for "any"
+    # Normalised gate labels to watch. Defaults to CUSTOMER VALIDATION only; None = any gate.
+    gates_filter: frozenset[str] | None = DEFAULT_GATES
 
     @classmethod
     def from_env(cls, env: dict | None = None) -> "GuardConfig":
@@ -62,13 +71,15 @@ class GuardConfig:
         except (ValueError, TypeError):
             threshold = DEFAULT_THRESHOLD
         raw_gates = str(env.get(ENV_GATES, "")).strip()
-        if raw_gates:
+        if not raw_gates:
+            gates_filter = DEFAULT_GATES
+        elif raw_gates.lower() in _ANY_GATE_SENTINELS:
+            gates_filter = None
+        else:
             gates = frozenset(
                 normalize_gate_label(g) for g in raw_gates.split(",") if g.strip()
             )
-            gates_filter = gates or None
-        else:
-            gates_filter = None
+            gates_filter = gates or DEFAULT_GATES
         return cls(enabled=enabled, threshold=threshold, gates_filter=gates_filter)
 
 
