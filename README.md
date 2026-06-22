@@ -114,6 +114,20 @@ python spar.py --resume --session 2         # resume an older session
 
 Transcripts save to `sparring_sessions/` with timestamps. Elapsed time shows at the end of each session.
 
+## Runaway kill switch
+
+A session can keep sparring for 20 rounds on a verdict that was already decided — e.g. when the JUDGE flags the same critical gate (like CUSTOMER VALIDATION) as `NOT MET` at every checkpoint. `spar_guard.py` is a drop-in front end for `spar.py` that stops a run when the same gate is `NOT MET` across N consecutive JUDGE checkpoints, writes a partial transcript naming the stop reason, and reports the early kill.
+
+```bash
+# run exactly like spar.py — the kill switch is on by default
+python spar_guard.py "your idea here" --rounds 20
+
+# dry-run the detector against a saved transcript (no API call)
+python spar_guard.py --replay sparring_sessions/<file>.txt
+```
+
+Configure via env (defaults shown): `SPAR_KILLSWITCH=1` (set `0`/`off` to disable), `SPAR_KILL_THRESHOLD=3` (consecutive `NOT MET` checkpoints to trip), `SPAR_KILL_GATES` defaults to `CUSTOMER VALIDATION` only (the one gate that is structurally unobtainable inside a session, so a healthy STRONG idea that legitimately leaves moat/18-month/hiring gates `NOT MET` is not killed). Pass a comma list to watch specific gates, or `*` (or `all`) to kill on any repeated gate. `telegram_bot.py` runs the same guard and posts the kill to Telegram (`TELEGRAM_BOT_TOKEN`/`TELEGRAM_CHAT_ID`). This layer is add-only — it runs `spar.py` as a subprocess and never edits it or `prompts/`.
+
 ## Edit the agents
 
 Each agent is a markdown file. Change personalities, rules, gates. No code to touch.
